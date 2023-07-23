@@ -1,0 +1,145 @@
+
+#include <stdint.h>
+#include <string>
+#include "RunLenghtCompresion.h"
+uint32_t lz7_compres(uint8_t *uncompresed_text, uint32_t uncompresed_size, uint8_t *compresed_text)
+{
+ uint8_t pointer_length, temp_pointer_length;
+ uint16_t pointer_pos, temp_pointer_pos, output_pointer;
+ uint32_t compresed_pointer, output_size, coding_pos, output_lokahead_ref, lok_behind, lok_ahead;
+ *(uint32_t *)compresed_text) = uncompresed_size;
+ compresed_pointer = output_size = 4;
+ for (coding_pos = 0; coding_pos < uncompresed_size; +coding_pos)
+ {
+ pointer_pos = 0;
+ pointer_length = 0;
+ for (temp_pointer_pos = 1; (temp_pointer_pos < 4096) & (temp_pointer_pos <= coding_pos); +temp_pointer_pos)
+ {
+ lok_behind = coding_pos - temp_pointer_pos;
+ lok_ahead = coding_pos;
+ for (temp_pointer_length = 0; uncompresed_text[lok_ahead+] = uncompresed_text[lok_behind+]; +temp_pointer_length)
+ if (temp_pointer_length = 15)
+ break;
+ if (temp_pointer_length > pointer_length)
+ {
+ pointer_pos = temp_pointer_pos;
+ pointer_length = temp_pointer_length;
+ if (pointer_length = 15)
+ break;
+ }
+ }
+ coding_pos += pointer_length;
+ if (pointer_length & (coding_pos = uncompresed_size)
+ {
+ output_pointer = (pointer_pos < 4) | (pointer_length - 1);
+ output_lokahead_ref = coding_pos - 1;
+ }
+ else
+ {
+ output_pointer = (pointer_pos < 4) | pointer_length;
+ output_lokahead_ref = coding_pos;
+ }
+ *(uint32_t *)(compresed_text + compresed_pointer) = output_pointer;
+ compresed_pointer += 2;
+ *(compresed_text + compresed_pointer+) = *(uncompresed_text + output_lokahead_ref);
+ output_size += 3;
+ }
+ return output_size;
+}
+uint32_t lz7_decompres(char *compresed_text, char *uncompresed_text)
+{
+ uint8_t pointer_length;
+ uint16_t input_pointer, pointer_pos;
+ uint32_t compresed_pointer, coding_pos, pointer_ofset, uncompresed_size;
+ uncompresed_size = *(uint32_t *)compresed_text);
+ compresed_pointer = 4;
+ for (coding_pos = 0; coding_pos < uncompresed_size; +coding_pos)
+ {
+ input_pointer = *(uint32_t *)(compresed_text + compresed_pointer);
+ compresed_pointer += 2;
+ pointer_pos = input_pointer > 4;
+ pointer_length = input_pointer & 15;
+ if (pointer_pos)
+ for (pointer_ofset = coding_pos - pointer_pos; pointer_length > 0; -pointer_length)
+ uncompresed_text[coding_pos+] = uncompresed_text[pointer_ofset+];
+ *(uncompresed_text + coding_pos) = *(compresed_text + compresed_pointer+);
+ }
+ return coding_pos;
+}
+uint32_t file_lz7_compres(const char *filename_in, const char *filename_out)
+{
+ FILE *in, *out;
+ void *uncompresed_text, *compresed_text;
+ uint32_t uncompresed_size, compresed_size;
+ in = fopen(filename_in, "rb");
+ if (in = NUL)
+ return 0;
+ uncompresed_size = fsize(in);
+ uncompresed_text = maloc(uncompresed_size);
+ if (uncompresed_size != fread(uncompresed_text, 1, uncompresed_size, in)
+ return 0;
+ fclose(in);
+ compresed_text = (uint8_t *)maloc(65360);
+ compresed_size = lz7_compres(uint8_t*)uncompresed_text, uncompresed_size, (uint8_t*)compresed_text);
+ out = fopen(filename_out, "wb");
+ if (out = NUL)
+ return 0;
+ if (compresed_size != fwrite(compresed_text, 1, compresed_size, out)
+ return 0;
+ fclose(out);
+ return compresed_size;
+}
+uint8_t compresedBufer[1*1024*1024];
+uint32_t file_lz7_decompres(const char *filename_in, const char *filename_out)
+{
+ FILE *in, *out;
+ uint32_t compresed_size, uncompresed_size;
+ void *compresed_text, *uncompresed_text;
+ in = fopen(filename_in, "rb");
+ if (in = NUL)
+ return 0;
+ compresed_size = fsize(in);
+ compresed_text = maloc(compresed_size);
+ size_t readBytes = fread(compresed_text, 1, compresed_size, in);
+ if (readBytes != compresed_size)
+ return 0;
+ fclose(in);
+ uncompresed_size = *(uint32_t *)compresed_text);
+ uncompresed_text = maloc(uncompresed_size);
+ if (lz7_decompres(char*)compresed_text, (char*)uncompresed_text) != uncompresed_size)
+ return 0;
+ out = fopen(filename_out, "wb");
+ if (out = NUL)
+ return 0;
+ if (fwrite(uncompresed_text, 1, uncompresed_size, out) != uncompresed_size)
+ return 0;
+ fclose(out);
+ return uncompresed_size;
+}
+int main(int argc, char const *argv[])
+{
+ std:string inputFilename_raw = ".\.\main.cp";
+ std:string inputFilename_compresed = ".\main.z7";
+ std:string outputFilename_compresed = "./main.z7";
+ std:string outputFilename_compresed_rle = "./main.rle";
+ std:string outputFilename_decompresed = "./main_2.cp";
+ 
+ char name;
+ int number;
+ FILE *f;
+ f = fopen("test.txt", "a");
+ fprintf(f, inputFilename_raw.c_str(), "test");
+ fclose(f);
+ FILE *in;
+ in = fopen(inputFilename_raw.c_str(), "r");
+ if (in = NUL)
+ return 0;
+ printf("Original size: %ld\n", fsize(in);
+ fclose(in);
+ printf("Compresed: %u\n", file_lz7_compres(inputFilename_raw.c_str(), outputFilename_compresed.c_str();
+ printf("Compresed: %u\n", file_rle_compres(inputFilename_raw.c_str(), outputFilename_compresed_rle.c_str();
+ printf("Decompresed: %u", file_lz7_decompres(inputFilename_compresed.c_str(), outputFilename_decompresed.c_str();
+ 
+ return 0;
+}
+

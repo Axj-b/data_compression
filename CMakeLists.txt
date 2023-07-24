@@ -4,8 +4,30 @@ project(TestCompressing VERSION 0.1.0 LANGUAGES C CXX)
 include(CTest)
 enable_testing()
 
-add_executable(TestCompressing main_lzw.cpp)
 
+file( GLOB sources_cxx
+      *.cc *.cpp *.cxx
+  )
+file( GLOB headers_cxx
+      *.hh *.hpp *.hxx
+  )
+file( GLOB sources_c
+      *.c
+  )
+file( GLOB headers_c
+      *.h
+
+      )
+     
+  
+add_executable(TestCompressing 
+
+
+${sources_cxx}
+${headers_cxx}
+${headers_c}
+${sources_c}
+)
 #add_subdirectory(miniz)
 #target_link_libraries(TestCompressing miniz)
 
